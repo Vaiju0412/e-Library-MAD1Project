@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous"/>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+          crossorigin="anonymous"/>
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='background.jpeg') }}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            height: 100vh;
+            }
+        .white-text {
+            color: white;
+        }
+        </style>
+    <title>{% block title %}Home{% endblock %}</title>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-info">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbar">
+        <div class="navbar-nav">
+            <a class="nav-item nav-link text-dark" id="home" href="/home">Home</a>
+        </div>
+        <div class="navbar-nav ml-auto">
+            <a class="nav-item nav-link text-dark" id="requests" href="/requests">Requests</a>
+            <a class="nav-item nav-link text-dark" id="stats" href="/lib-stats">Stats</a>
+            <a class="nav-item nav-link text-dark" id="logout" href="/logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="w3-cursive">
+        {% block content %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        {% if category == 'error' %}
+        <br>
+        <div class="alert alert-danger alter-dismissable fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% else %}
+        <div class="alert alert-success alter-dismissable fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
+        {%if matching_sections%}
+
+            {% for section in matching_sections %}
+
+                <div class="card mt-3">
+                    <div class="card-header" id="card">
+                        <h2 class="mb-0">
+                            <button type="submit" class="btn btn-primary mt-3 float-right" data-toggle="modal"
+                                        data-target="#editSection{{section.Section_id}}">Edit Section
+                            </button>
+
+                            <div class="modal fade" id="editSection{{section.Section_id}}" tabindex="-1" role="dialog" aria-labelledby="editSection"
+                            aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                        
+                                            <h5 class="modal-title" id="editSection">Edit Section</h5>
+
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form method="POST" action="{{ url_for('views.editSection', section_id = section.Section_id) }}"
+                                                id="editSection">
+                                                <label for="SectionTitle"><h5>Title</h5></label>
+                                                <input type="text" name="Section_Title" id="Section_Title" class="form-control" value="{{section.Section_Title}}"
+                                                required>
+                    
+                                                <label for="Section_Descript"><h5>Description</h5></label>
+                                                <input type="text" name="Section_Descript" id="Section_Descript" value="{{ section.Section_Descript }}"
+                                                            class="form-control" required>
+                                                            
+                                                <button type="submit" class="btn btn-primary mt-3">Edit Section</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <button class="btn btn-link" type="button" data-toggle="collapse"
+                                                data-target="#{{section.Section_id}}" aria-expanded="false"
+                                                aria-controls="section">
+                                {{ section.Section_Title }}
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="{{section.Section_id}}" class="collapse"
+                                    aria-labelledby="section" data-parent="#accordion">
+                        <div class="card-body">
+                            <p>Created on: {{ section.Section_Date }}</p>
+                            <p>Description: {{ section.Section_Descript }}</p>
+
+                            {% for book in section.books %}
+                            <div class="d-flex justify-content-between" style="margin-bottom: 10px;">
+                                <button type="button" class="list-group-item list-group-item-action"
+                                    aria-current="true" data-toggle="modal" data-target="#editBook{{book.Book_id}}">
+                                    {{ book.Book_Name }}
+                                </button>            
+                                    <a href="{{ url_for('views.deleteBook', book_id = book.Book_id) }}" class="btn btn-danger mt-3">
+                                        <i class="fa fa-trash"></i>
+                                    </a>                          
+                            </div>                      
+
+                                <div class="modal fade" id="editBook{{book.Book_id}}" tabindex="-1" role="dialog" aria-labelledby="editBook"
+                                        aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="editBook{{book.Book_id}}">Edit Book</h5>
+
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+
+                                            <div class="modal-body">
+                                        <!-- form to input the book details -->
+
+                                                <form method="POST" action="{{url_for('views.editBook', section_id = section.Section_id, book_id = book.Book_id)}}"
+                                                        id="editBook">
+                                                    <label for="Book_Name">Name:</label>
+                                                    <input type="text" name="Book_Name" id="Book_Name" class="form-control"
+                                                    value="{{book.Book_Name}}" required>
+
+                                                    <label for="Author">Authors: </label>
+                                                    <input type="text" name="Author" id="Author" class="form-control" value="{{book.Author}}"required>
+
+                                                    <label for="Synopsis">Synopsis: </label>
+                                                    <input type="text" name="Synopsis" id="Synopsis" class="form-control" value="{{book.Synopsis}}"required>
+
+                                                    <label for="Content">Content:</label>
+                                                    <input type="text" name="Content" id="Content" class="form-control" value="{{book.Content}}"required>
+
+                                                    <button type="submit" class="btn btn-primary mt-3">Edit Book</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>   
+                            {% endfor %}
+
+                        </div>
+
+                        <div class="d-flex justify-content-between" style="margin: 10px;">
+                            <button type="submit" class="btn btn-primary mt-3" data-toggle="modal"
+                                        data-target="#addBook{{section.Section_id}}">Add Book
+                            </button>
+
+                            <a href="{{ url_for('views.deleteSection', section_id = section.Section_id) }}" class="btn btn-danger mt-3"> Delete this section</a>
+
+                            <div class="modal fade" id="addBook{{section.Section_id}}" tabindex="-1" role="dialog" aria-labelledby="addBook"
+                                aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="addBook{{section.Section_id}}">Add Book</h5>
+
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+
+                                        <div class="modal-body">
+
+                                            <form method="POST" action="{{url_for('views.addBook', section_id = section.Section_id)}}"
+                                                id="addBook">
+                                                <label for="BookName">Name:</label>
+                                                <input type="text" name="Book_Name" id="Book_Name" class="form-control"
+                                                    required>
+
+                                                <label for="Author">Authors: </label>
+                                                <input type="text" name="Author" id="Author" class="form-control" required>
+
+                                                <label for="Synopsis">Synopsis: </label>
+                                                <input type="text" name="Synopsis" id="Synopsis" class="form-control" required>
+
+
+                                                <label for="Content">Content:</label>
+                                                <input type="text" name="Content" id="Content" class="form-control" required>
+
+                                                <button type="submit" class="btn btn-primary mt-3">Add Book</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>                    
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+        {% endif %}
+
+        {% if matching_users_books %}
+            {%for book_id, book_info in matching_users_books.items() %} <br>              
+                {% if book_info.requested_books %}
+                    <h5 class = "white-text"> Pending Requests </h5><br>
+                    <ul class="list-group">
+                        {% for request_book in book_info.requested_books %}
+                            <li class="list-group-item"><b>{{ request_book.books.Book_Name }}</b><i> requested by <a href="#" data-toggle="modal" data-target="#userInfoModal{{request_book.user_book_id}}">{{ request_book.users.user_id }}</a></i>
+                
+                                <a href="{{ url_for('views.issue', id = request_book.User_id, book_id = request_book.Book_id, issue = 'Reject' ) }}" class="btn btn-danger float-right">Reject</a>
+                                <a href="{{ url_for('views.issue', id = request_book.User_id, book_id = request_book.Book_id, issue = 'Grant' ) }}" class="btn btn-success float-right" style="margin-right: 5px;">Grant</a>
+                            </li><br>
+        
+                            <div class="modal fade" id="userInfoModal{{request_book.user_book_id}}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="userInfoModalLabel{{request_book.user_book_id}}">User Information</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p><b>User ID:</b> {{ request_book.users.user_id }}</p>
+                                            <p><b>First Name:</b> {{ request_book.users.firstName }}</p>
+                                            <p><b>Access required till:</b> {{ request_book.expiration_period }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>        
+                        {% endfor %}            
+                    </ul><br>
+                {% endif %}
+
+                {% if book_info.issued_books %}
+
+                    <h5 class = "white-text"> Issued </h5><br>
+
+                    <ul class="list-group">
+
+                    {% for issue_book in book_info.issued_books %}
+
+                        <li class="list-group-item"><b>{{ issue_book.book.Book_Name }}</b><i> issued to {{ issue_book.users.user_id }}</i>
+                            <a href="{{ url_for('views.user_revoke', id = issue_book.User_id, book_id = issue_book.Book_id, role = 'admin') }}" class="btn btn-danger float-right">Revoke Access</a>           
+                            <div class="form-text" id="basic-addon4"><i style="font-style: italic; font-size: smaller;"><b>Time of Return:</b> {{ issue_book.expiration_period }}</i></div>
+                        </li><br> 
+                    {% endfor %}
+
+                {% endif %}
+
+                {% if book_info.rejected_books %}
+
+                    <h5 class = "white-text"> Rejected </h5><br>                
+                    <ul class="list-group">
+
+                        {% for reject_book in book_info.rejected_books %}
+    
+                            <li class="list-group-item"><b>{{ reject_book.books.Book_Name }}</b><i> rejected for {{ reject_book.users.user_id }}</i></li><br> 
+    
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            
+
+                {% if book_id == 'available_books' %}                
+                    <h5 class = "white-text"> Available Books </h5><br>
+                    {% for book in book_info %}
+                        <div class="d-flex justify-content-between" style="margin-bottom: 10px;">
+                            <button type="button" class="list-group-item list-group-item-action"
+                            aria-current="true" data-toggle="modal" data-target="#editBook{{book.Book_id}}">
+                                <b>{{ book.Book_Name }} </b> | {{ book.section.Section_Title}}
+                            </button>            
+                            <a href="{{ url_for('views.deleteBook', book_id = book.Book_id) }}" class="btn btn-danger mt-3">
+                                <i class="fa fa-trash"></i>
+                            </a>                          
+                        </div>                      
+
+                        <div class="modal fade" id="editBook{{book.Book_id}}" tabindex="-1" role="dialog" aria-labelledby="editBook"
+                            aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editBook{{book.Book_id}}">Edit Book</h5>
+
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+
+                                <div class="modal-body">
+
+                                    <form method="POST" action="{{url_for('views.editBook', section_id = book.section_id, book_id = book.Book_id)}}"
+                                            id="editBook">
+                                        <label for="Book_Name">Name:</label>
+                                        <input type="text" name="Book_Name" id="Book_Name" class="form-control"
+                                        value="{{book.Book_Name}}" required>
+
+                                        <label for="Author">Authors: </label>
+                                        <input type="text" name="Author" id="Author" class="form-control" value="{{book.Author}}"required>
+
+                                        <label for="Synopsis">Synopsis: </label>
+                                        <input type="text" name="Synopsis" id="Synopsis" class="form-control" value="{{book.Synopsis}}"required>
+
+                                        <label for="Content">Content:</label>
+                                        <input type="text" name="Content" id="Content" class="form-control" value="{{book.Content}}"required>
+
+                                        <button type="submit" class="btn btn-primary mt-3">Edit Book</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+
+
+        {% if matching_authors_books %}
+            {%for book_id, book_info in matching_authors_books.items() %} <br>              
+                {% if book_info.requested_books %}
+                    <h5> Pending Requests </h5><br>
+                    <ul class="list-group">
+                        {% for request_book in book_info.requested_books %}
+                            <li class="list-group-item"><b>{{ request_book.books.Book_Name }}</b><i> requested by <a href="#" data-toggle="modal" data-target="#userInfoModal{{request_book.user_book_id}}">{{ request_book.users.user_id }}</a></i>
+                
+                                <a href="{{ url_for('views.issue', id = request_book.User_id, book_id = request_book.Book_id, issue = 'Reject' ) }}" class="btn btn-danger float-right">Reject</a>
+                                <a href="{{ url_for('views.issue', id = request_book.User_id, book_id = request_book.Book_id, issue = 'Grant' ) }}" class="btn btn-success float-right" style="margin-right: 5px;">Grant</a>
+                            </li><br>
+        
+                            <div class="modal fade" id="userInfoModal{{request_book.user_book_id}}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="userInfoModalLabel{{request_book.user_book_id}}">User Information</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p><b>User ID:</b> {{ request_book.users.user_id }}</p>
+                                            <p><b>First Name:</b> {{ request_book.users.firstName }}</p>
+                                            <p><b>Access required till:</b> {{ request_book.expiration_period }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>        
+                        {% endfor %}            
+                    </ul><br>
+                {% endif %}
+
+                {% if book_info.issued_books %}
+
+                    <h5> Issued </h5><br>
+
+                    <ul class="list-group">
+
+                    {% for issue_book in book_info.issued_books %}
+
+                        <li class="list-group-item"><b>{{ issue_book.book.Book_Name }}</b><i> issued to {{ issue_book.users.user_id }}</i>
+                            <a href="{{ url_for('views.user_revoke', id = issue_book.User_id, book_id = issue_book.Book_id, role = 'admin') }}" class="btn btn-danger float-right">Revoke Access</a>           
+                            <div class="form-text" id="basic-addon4"><i style="font-style: italic; font-size: smaller;"><b>Time of Return:</b> {{ issue_book.expiration_period }}</i></div>
+                        </li><br> 
+                    {% endfor %}
+
+                {% endif %}
+
+                {% if book_info.rejected_books %}
+
+                    <h5> Rejected </h5><br>                
+                    <ul class="list-group">
+
+                        {% for reject_book in book_info.rejected_books %}
+    
+                            <li class="list-group-item"><b>{{ reject_book.books.Book_Name }}</b><i> rejected for {{ reject_book.users.user_id }}</i></li><br> 
+    
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            
+
+                {% if book_id == 'available_books' %}                
+                    <h5> Available Books </h5><br>
+                    {% for book in book_info %}
+                        <div class="d-flex justify-content-between" style="margin-bottom: 10px;">
+                            <button type="button" class="list-group-item list-group-item-action"
+                            aria-current="true" data-toggle="modal" data-target="#editBook{{book.Book_id}}">
+                                <b>{{ book.Book_Name }} </b> | {{ book.section.Section_Title}}
+                            </button>            
+                            <a href="{{ url_for('views.deleteBook', book_id = book.Book_id) }}" class="btn btn-danger mt-3">
+                                <i class="fa fa-trash"></i>
+                            </a>                          
+                        </div>                      
+
+                        <div class="modal fade" id="editBook{{book.Book_id}}" tabindex="-1" role="dialog" aria-labelledby="editBook"
+                            aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editBook{{book.Book_id}}">Edit Book</h5>
+
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+
+                                <div class="modal-body">
+
+                                    <form method="POST" action="{{url_for('views.editBook', section_id = book.section_id, book_id = book.Book_id)}}"
+                                            id="editBook">
+                                        <label for="Book_Name">Name:</label>
+                                        <input type="text" name="Book_Name" id="Book_Name" class="form-control"
+                                        value="{{book.Book_Name}}" required>
+
+                                        <label for="Author">Authors: </label>
+                                        <input type="text" name="Author" id="Author" class="form-control" value="{{book.Author}}"required>
+
+                                        <label for="Synopsis">Synopsis: </label>
+                                        <input type="text" name="Synopsis" id="Synopsis" class="form-control" value="{{book.Synopsis}}"required>
+
+                                        <label for="Content">Content:</label>
+                                        <input type="text" name="Content" id="Content" class="form-control" value="{{book.Content}}"required>
+
+                                        <button type="submit" class="btn btn-primary mt-3">Edit Book</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        {% endblock %}
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous"/>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+          crossorigin="anonymous"/>
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='background.jpeg') }}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            height: 100vh;
+        }
+        .white-text {
+            color: white;
+        }
+    </style>
+    <title>{% block title %}Requests{% endblock %}</title>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-info">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbar">
+        <div class="navbar-nav">
+            <a class="nav-item nav-link text-dark" id="home" href="/home">Home</a>
+        </div>
+        <div class="navbar-nav ml-auto">
+            <a class="nav-item nav-link text-dark" id="requests" href="/requests">Requests</a>
+            <a class="nav-item nav-link text-dark" id="stats" href="/lib-stats">Stats</a>
+            <a class="nav-item nav-link text-dark" id="logout" href="/logout">Logout</a>
+        </div>
+    </div>
+</nav>
+<div class="container">
+    <div class="w3-cursive">
+        {% block content %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        {% if category == 'error' %}
+        <br>
+        <div class="alert alert-danger alter-dismissable fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% else %}
+        <div class="alert alert-success alter-dismissable fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <br>
+        <h5 class = "white-text"> Pending to be Issued </h5><br>
+
+        {% if requested_books %}
+
+        <ul class="list-group">
+            {% for book in requested_books %}
+            <li class="list-group-item"><b>{{ book.books.Book_Name }}</b><i> requested by <a href="#" data-toggle="modal" data-target="#userInfoModal{{book.user_book_id}}">{{ book.users.user_id }}</a></i>
+        
+                <a href="{{ url_for('views.issue', id = book.User_id, book_id = book.Book_id, issue = 'Reject' ) }}" class="btn btn-danger float-right">Reject</a>
+                <a href="{{ url_for('views.issue', id = book.User_id, book_id = book.Book_id, issue = 'Grant' ) }}" class="btn btn-success float-right" style="margin-right: 5px;">Grant</a>
+            </li><br>
+
+            <div class="modal fade" id="userInfoModal{{book.user_book_id}}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="userInfoModalLabel{{book.user_book_id}}">User Information</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p><b>User ID:</b> {{ book.users.user_id }}</p>
+                            <p><b>First Name:</b> {{ book.users.firstName }}</p>
+                            <p><b>Access required till:</b> {{ book.expiration_period }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% endfor %}            
+        </ul><br>
+        {% else %}
+
+        <div class="alert alert-info" role="alert">
+            Yaayy!! No pending requests as of now.
+        </div>
+
+        {% endif %}
+
+        <h5 class = "white-text"> Issued </h5><br>
+
+        {% if issued_books %}
+
+        <ul class="list-group">
+
+            {% for issue_book in issued_books %}
+
+            <li class="list-group-item"><b>{{ issue_book.books.Book_Name }}</b><i> issued to <a href="#" data-toggle="modal" data-target="#userInfoModal{{issue_book.user_book_id}}">{{ issue_book.users.user_id }}</a></i>
+            <a href="{{ url_for('views.user_revoke', id = issue_book.users.id, book_id = issue_book.books.Book_id, role = 'admin') }}" class="btn btn-danger float-right">Revoke Access</a>           
+            <div class="form-text" id="basic-addon4"><i style="font-style: italic; font-size: smaller;"><b>Time of Return:</b> {{ issue_book.expiration_period }}</i></div>
+            </li><br> 
+
+            <div class="modal fade" id="userInfoModal{{issue_book.user_book_id}}" tabindex="-1" role="dialog" aria-labelledby="userInfoModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="userInfoModalLabel{{issue_book.user_book_id}}">User Information</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p><b>User ID:</b> {{ issue_book.users.user_id }}</p>
+                            <p><b>First Name:</b> {{ issue_book.users.firstName }}</p>
+                            <p><b>Time of return:</b> {{ issue_book.expiration_period }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% endfor %} 
+
+        {% else %}
+
+        <div class="alert alert-info" role="alert">
+            Please complete all the pending requests if any.
+        </div>
+    
+        {% endif %}
+
+        </ul><br>
+
+        <h5 class = "white-text"> Rejected </h5><br>
+
+        {% if rejected_books %}
+
+        <ul class="list-group">
+
+            {% for reject_book in rejected_books %}
+
+            <li class="list-group-item"><b>{{ reject_book.books.Book_Name }}</b><i> rejected for {{ reject_book.users.user_id }}</i></li><br> 
+
+            {% endfor %}
+        {% else %}
+
+        <div class="alert alert-info" role="alert">
+            No requests rejected.
+        </div>
+    
+        {% endif %} 
+
+        </ul>
+             
+        {% endblock %}
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+</body>
+</html>

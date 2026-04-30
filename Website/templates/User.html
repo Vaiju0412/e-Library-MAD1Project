@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous"/>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+          crossorigin="anonymous"/>
+
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='background.jpeg') }}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            height: 200vh;
+        }
+        .white-text {
+            color: white;
+        }
+    </style>
+    <title>{% block title %}Home{% endblock %}</title>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-info">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbar">
+        <div class="navbar-nav">
+            <a class="nav-item nav-link text-dark" id="home" href="/{{user.id}}/dashboard">Home</a>
+        </div>
+        <div class="navbar-nav ml-auto">
+            <a class="nav-item nav-link text-dark" id="requests" href="/{{user.id}}/myBooks">My Books</a>
+            <a class="nav-item nav-link text-dark" id="stats" href="/{{user.id}}/stats">Stats</a>
+            <a class="nav-item nav-link text-dark" id="logout" href="/logout">Logout</a>
+        </div>
+    </div>
+</nav>
+<div class="container">
+    <div class="w3-cursive">
+        {% block content %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        {% if category == 'error' %}
+        <br>
+        <div class="alert alert-danger alter-dismissable fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% else %}
+        <div class="alert alert-success alter-dismissable fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h3 class = "white-text" style="font-family: Lucida Handwriting, Cursive;"> Hi {{ user.firstName }},</h3>
+                </div>
+                <div class="col"><br>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <form action="{{ url_for('views.search', role='user', id=user.id) }}" method="POST" class="form-inline">
+                            <input class="form-control mr-sm-2" type="search" placeholder="Search" name="search" aria-label="search" id="search">
+                            <button class="btn btn-primary my-2 my-sm-0" type="submit">Search</button>
+                    </div>
+                    <div class="my-2 mr-sm-4 float-right">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="filter" id="filter_books" value="books" checked>
+                                <label class="form-check-label white-text" for="filter_books">Books</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="filter" id="filter_authors" value="authors">
+                                <label class="form-check-label white-text" for="filter_authors">Authors</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="filter" id="filter_sections" value="sections">
+                                <label class="form-check-label white-text" for="filter_sections">Sections</label>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <br>
+        </div>
+        
+        {% for section in sections %}
+        {% if section.available_books%}
+        <h3 class = "white-text">{{ section.Section_Title }}</h3><br>
+        <div class="row">
+            {% for book in section.available_books %}
+            <br>    
+            <div class="col-md-4">
+                    <div class="card mb-3" style="max-width: 540px;">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ book.Book_Name }}</h5>
+                            <p class="card-text">{{ book.Author }}</p>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#requestModal{{ book.Book_id }}">
+                                    Request Access
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#details{{ book.Book_id }}">
+                                    Details
+                                </button>
+                            </div>     
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal fade" id="requestModal{{ book.Book_id }}" tabindex="-1" role="dialog" aria-labelledby="details" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="details">Request Access for {{ book.Book_Name }}</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form action="{{ url_for('views.user_request', id=user.id, book_id=book.Book_id) }}" method="POST" class="form-inline">
+                                    <div class="form-group mr-2">
+                                        <label class="mr-2" for="duration">Duration:</label>
+                                        <select class="form-control mr-2" id="duration" name="duration">
+                                            <option value="hours">Hours</option>
+                                            <option value="days">Days</option>
+                                            <option value="weeks">Weeks</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="number" class="form-control" id="duration_value" name="duration_value" placeholder="Duration Value" required>
+                                    </div>
+                                    <div class="d-flex justify-content-center w-100 mt-3">
+                                        <button type="submit"  class="btn btn-primary center">Request</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="details{{ book.Book_id }}" tabindex="-1" role="dialog" aria-labelledby="details" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="details{{ book.Book_id }}">Book Info</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <p><b>Title:</b> {{ book.Book_Name }}</p>
+                                <p><b>Author:</b> {{ book.Author }}</p>
+                                <p><b>Synopsis:</b> {{ book.Synopsis }}</p>
+                                {% if book_feedback[book.Book_id] %}
+                                    <h6><b>Reviews</b></h6>
+                                    {% for user in book_feedback[book.Book_id] %}
+                                        <ul class="list-group">
+                                            <li class="list-group-item">
+                                                <b>{{ book_feedback[book.Book_id][user] }}</b> by {{ user }}
+                                            </li><br>
+                                        </ul>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endfor %}
+
+
+            {% if returned_books%}
+            <h3 class = "white-text"> Read Again </h3><br>
+            <div class="row">
+                {% for book in returned_books %}
+                <br>    
+                <div class="col-md-4">
+                        <div class="card mb-3" style="max-width: 540px;">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ book.Book_Name }}</h5>
+                                <p class="card-text">{{ book.Author }}</p>
+                                <div class="d-flex justify-content-between" style="margin: 10px;">
+                                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#requestModal{{ book.Book_id }}">
+                                        Request Access
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#details{{ book.Book_id }}">
+                                        Details
+                                    </button>
+                                </div>     
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal fade" id="requestModal{{ book.Book_id }}" tabindex="-1" role="dialog" aria-labelledby="details" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="details">Request Access for {{ book.Book_Name }}</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <form action="{{ url_for('views.user_request', id=user.id, book_id=book.Book_id) }}" method="POST" class="form-inline">
+                                        <div class="form-group mr-2">
+                                            <label class="mr-2" for="duration">Duration:</label>
+                                            <select class="form-control mr-2" id="duration" name="duration">
+                                                <option value="hours">Hours</option>
+                                                <option value="days">Days</option>
+                                                <option value="weeks">Weeks</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="number" class="form-control" id="duration_value" name="duration_value" placeholder="Duration Value" required>
+                                        </div>
+                                        <div class="d-flex justify-content-center w-100 mt-3">
+                                            <button type="submit"  class="btn btn-primary center">Request</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <div class="modal fade" id="details{{ book.Book_id }}" tabindex="-1" role="dialog" aria-labelledby="details" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="details{{ book.Book_id }}">Book Info</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <p><b>Title:</b> {{ book.Book_Name }}</p>
+                                    <p><b>Author:</b> {{ book.Author }}</p>
+                                    <p><b>Synopsis:</b> {{ book.Synopsis }}</p>
+                                    {% if book_feedback[book.Book_id] %}
+                                        <h6><b>Reviews</b></h6>
+                                        {% for user in book_feedback[book.Book_id] %}
+                                            <ul class="list-group">
+                                                <li class="list-group-item">
+                                                    <b>{{ book_feedback[book.Book_id][user] }}</b> by {{ user }}
+                                                </li><br>
+                                            </ul>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endblock %}       
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+</body>
+</html>

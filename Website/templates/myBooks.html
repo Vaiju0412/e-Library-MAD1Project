@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous"/>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+          crossorigin="anonymous"/>
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='background.jpeg') }}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            height: 100vh;
+        }
+        .white-text {
+            color: white;
+        }
+    </style>
+    <title>{% block title %}Home{% endblock %}</title>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-info">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbar">
+        <div class="navbar-nav">
+            <a class="nav-item nav-link text-dark" id="home" href="/{{user.id}}/dashboard">Home</a>
+        </div>
+        <div class="navbar-nav ml-auto">
+            
+            <a class="nav-item nav-link text-dark" id="requests" href="/{{user.id}}/myBooks">My Books</a>
+            <a class="nav-item nav-link text-dark" id="stats" href="/{{user.id}}/stats">Stats</a>
+            <a class="nav-item nav-link text-dark" id="logout" href="/logout">Logout</a>
+
+        </div>
+    </div>
+</nav>
+<div class="container">
+    <div class="w3-cursive">
+        {% block content %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        {% if category == 'error' %}
+        <br>
+        <div class="alert alert-danger alter-dismissable fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% else %}
+        <div class="alert alert-success alter-dismissable fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <br>
+        {% if requested_books %}
+       
+        <h5 class = "white-text"> Pending to be Issued </h5><br>        
+
+        <ul class="list-group">
+
+            {% for book in requested_books %}
+
+            <li class="list-group-item">{{ book.books.Book_Name }} <i>by {{ book.books.Author}}</i>
+            <a href="{{ url_for('views.user_revoke', id = book.User_id, book_id = book.Book_id, role = 'user') }}" class="btn btn-danger float-right">Revoke Access</a>
+            </li><br>    
+
+            {% endfor %}     
+
+        </ul><br>
+        {% else %}
+            {% if user.count_access == 0 %}
+            <div class="alert alert-info" role="alert">
+                Hey! You can access 5 books in our library. Keep browsing!!
+            </div>
+            {% endif %}
+        {% endif %}
+
+        {% if issued_books %}
+
+        <h5 class = "white-text"> Issued </h5><br>
+
+
+        <ul class="list-group">
+
+            {% for book in issued_books %}
+
+            <li class="list-group-item">{{ book.books.Book_Name }} <i>by {{ book.books.Author}}</i>
+
+            <!-- <a href="{{ url_for('views.return_book', id = book.User_id, book_id = book.Book_id) }}" class="btn btn-warning float-right">Return</a> -->
+            <a href="#" class="btn btn-success float-right" style="margin-right: 5px;" data-toggle="modal" data-target="#BookInfoModal{{book.user_book_id}}">View</a></i>
+            <div class="form-text" id="basic-addon4"><i style="font-style: italic; font-size: smaller;">Return this book by {{ book.expiration_period }}</i></div>
+    
+        </li><br>
+
+            <div class="modal fade" id="BookInfoModal{{book.user_book_id}}" tabindex="-1" role="dialog" aria-labelledby="BookInfoModalLabel{{book.user_book_id}}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="BookInfoModalLabel{{book.user_book_id}}">Book Info</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p><b>Title: </b>{{ book.books.Book_Name }}</p>
+                            <p><b>Author: </b>{{ book.books.Author}}</p>
+                            <p><b>Content: </b>{{ book.books.Content}}</p>
+                            
+                            <form method="POST" action="{{ url_for('views.return_book', id = user.id, book_id = book.Book_id) }}" id="feedback">
+
+                                <label for="feedback"><b>How did you find this book?</b></label>
+                                <input type="text" name="feedback" id="feedback" class="form-control">
+
+                                <button type="submit" class="btn btn-warning mt-3">Return</button>
+
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% endfor %} 
+
+        </ul>
+
+        {% elif requested_books %}
+
+        <h5 class = "white-text"> Issued </h5><br>
+
+        <div class="alert alert-info" role="alert">
+            Don't worry. You will get your books issued soon.
+        </div>
+
+        {% endif %}
+
+        {% if rejected_books %}
+       
+        <h5 class = "white-text"> Rejected </h5><br>        
+
+        <ul class="list-group">
+
+            {% for rejected_book in rejected_books %}
+
+            <li class="list-group-item">{{ rejected_book.books.Book_Name }} <i>by {{ rejected_book.books.Author}}</i></li><br>    
+
+            {% endfor %}     
+
+        </ul><br>
+
+        {% endif %}
+
+
+        {% endblock %}
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+</body>
+</html>
